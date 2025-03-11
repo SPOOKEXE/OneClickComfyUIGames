@@ -377,7 +377,7 @@ def comfyui_nvidia() -> None:
 		packages : List[str] = ["tqdm", "requests", "fastapi", "pydantic", "pillow", "websocket-client", "aiohttp", "uvicorn", "websockets"]
 		_, __ = run_command([VENV_PYTHON_FILEPATH.as_posix(), "-m", "pip", "install"] + packages, shell=True)
 		# TODO: check errors on above
-		set_fflag("requirements_installed", True)
+		set_fflag("proxy_requirements_installed", True)
 
 	# install ComfyUI/requirements.txt
 	if not get_fflag("comfyui_requirements_installed"):
@@ -385,7 +385,7 @@ def comfyui_nvidia() -> None:
 		requirements_file = COMFYUI_DIRECTORY / "requirements.txt"
 		_, __ = run_command([VENV_PYTHON_FILEPATH.as_posix(), "-m", "pip", "install", "-r", requirements_file], shell=True)
 		# TODO: check errors on above
-		set_fflag("requirements_installed", True)
+		set_fflag("comfyui_requirements_installed", True)
 
 	# git clone custom_nodes
 	print('Cloning all custom nodes.')
@@ -418,9 +418,11 @@ def comfyui_nvidia() -> None:
 		update_python_torch_compiled_cuda(VENV_PYTHON_FILEPATH)
 		HAS_TORCH_CUDA : bool = check_python_torch_compiled_with_cuda(VENV_PYTHON_FILEPATH)
 
+	print("="*10)
 	if HAS_TORCH_CUDA:
-		print("If you want to run in high GPU performance mode, enter 'yes'/'y'.")
-		if input("").lower() not in ("yes", "y"):
+		print("If you want to run in LOW VRAM mode, enter 'yes'/'y', otherwise 'no'/'n'.")
+		if input("").lower() in ("yes", "y"):
+			print("Low VRAM")
 			arguments.append("--lowvram")
 	else:
 		print("CPU Mode was selected.")
