@@ -26,7 +26,29 @@ import threading
 import logging
 import time
 import re
+import json
 import sys
+
+def get_fflags() -> dict:
+	if not os.path.exists("fflag"):
+		return dict()
+	with open("fflag", "r", encoding='utf-8', errors='ignore') as file:
+		try:
+			flags : dict = json.loads(file.read())
+			assert isinstance(flags, dict), "FFlags is not a dictionary!"
+		except:
+			return dict()
+	return flags
+
+def get_fflag(key : str) -> bool:
+	fflags = get_fflags()
+	return fflags.get(key, False)
+
+def set_fflag(key : str, value : bool):
+	fflags = get_fflags()
+	fflags[key] = value
+	with open("fflag", "w", encoding='utf-8', errors='ignore') as file:
+		file.write(json.dumps(fflags, indent=4))
 
 INSTALLER_DIRECTORY : Path = Path(os.path.dirname(os.path.abspath(__file__)))
 TOOLS_DIRECTORY : Path = INSTALLER_DIRECTORY / "tools"
@@ -181,7 +203,7 @@ def download_file(url: str, filepath: Path, chunk_size: int = 64) -> None:
 	response.raise_for_status()  # Raise an error for bad status codes
 	total_size = int(response.headers.get('content-length', 0))
 	progress_bar = tqdm(total=total_size, unit='B', unit_scale=True, desc=filepath.as_posix().split('/')[-1]) # type: ignore
-	with open(filepath, 'wb') as file:
+	with open(filepath.as_posix(), 'wb') as file:
 		for chunk in response.iter_content(chunk_size=chunk_size * 1024):
 			file.write(chunk)
 			progress_bar.update(len(chunk))
@@ -215,11 +237,11 @@ def check_for_proxy_and_comfyui_responses() -> None:
 	print("Head to Abyss Diver and open the AI Portrait page!")
 	print("")
 
-def clone_custom_nodes_to_folder(custom_nodes_folder : Path) -> None:
+def clone_custom_nodes_to_folder(CUSTOM_NODES_FOLDER : Path) -> None:
 	"""Download all the stored comfyui custom nodes to the given folder"""
 	previous_directory = Path(os.getcwd()).absolute()
-	os.makedirs(custom_nodes_folder, exist_ok=True)
-	os.chdir(custom_nodes_folder)
+	os.makedirs(CUSTOM_NODES_FOLDER.as_posix(), exist_ok=True)
+	os.chdir(CUSTOM_NODES_FOLDER.as_posix())
 	for node_repository_url in COMFYUI_CUSTOM_NODES:
 		# attempt to clone all repositories into the directory
 		print(f'Cloning: {node_repository_url}')
@@ -263,15 +285,15 @@ def download_loras_to_subfolder(models_folder : Path) -> None:
 			print(e)
 			assert False, f"Failed to download the {filename} lora file."
 
-def check_python_torch_compiled_with_cuda(python_file : Path | str) -> bool:
+def check_python_torch_compiled_with_cuda(python_file : Path) -> bool:
 	try:
-		status, _ = run_command([python_file, "-c" "import torch; assert torch.cuda.is_available(), \'cuda not available\'"], shell=True)
+		status, _ = run_command([python_file.as_posix(), "-c" "import torch; assert torch.cuda.is_available(), \'cuda not available\'"], shell=True)
 		assert status == 0, "Torch failed to import."
 		return True
 	except:
 		return False
 
-def update_python_torch_compiled_cuda(python_file : Path | str) -> bool:
+def update_python_torch_compiled_cuda(python_file : Path) -> bool:
 	print("="*10)
 	print("Installing torch torchaudio and torchvision with CUDA acceleration.")
 	print("Please open a new terminal, type 'nvidia-smi' and find the CUDA Version: XX.X.")
@@ -291,7 +313,7 @@ def update_python_torch_compiled_cuda(python_file : Path | str) -> bool:
 	else:
 		print("Defaulted to CUDA 12.4.")
 		index_url = "https://download.pytorch.org/whl/cu124"
-	_, __ = run_command([python_file, "-m", "pip", "install", "--upgrade", "torch", "torchaudio", "torchvision", "--index-url", index_url], shell=True)
+	_, __ = run_command([python_file.as_posix(), "-m", "pip", "install", "--upgrade", "torch", "torchaudio", "torchvision", "--index-url", index_url], shell=True)
 	print(f"Installed {index_url} cuda acceleration for torch.")
 
 def comfyui_nvidia() -> None:
@@ -301,8 +323,7 @@ def comfyui_nvidia() -> None:
 	if os.path.exists(COMFYUI_DIRECTORY) is False:
 		print("Cloning the ComfyUI repository...")
 		previous_directory = Path(os.getcwd()).absolute()
-		os.makedirs(COMFYUI_DIRECTORY, exist_ok=True)
-		os.chdir(COMFYUI_DIRECTORY)
+		os.chdir(TOOLS_DIRECTORY)
 		try:
 			completed_process = run_subprocess_cmd(["git", "clone", COMFYUI_MAIN_REPOSITORY_URL])
 			assert completed_process, "Failed to run the command."
@@ -322,7 +343,7 @@ def comfyui_nvidia() -> None:
 	if os.path.exists(VENV_PYTHON_FILEPATH) is False:
 		print(f'No virtual environment located - creating now!')
 		try:
-			completed_process = run_subprocess_cmd([SYSTEM_PYTHON_PATH, "-m", "venv", VENV_DIRECTORY.as_posix()])
+			completed_process = run_subprocess_cmd([SYSTEM_PYTHON_PATH.as_posix(), "-m", "venv", VENV_DIRECTORY.as_posix()])
 			assert completed_process, f"Failed to create the venv directory!"
 			status = completed_process.returncode
 		except:
@@ -332,7 +353,7 @@ def comfyui_nvidia() -> None:
 
 	# try use that python file
 	try:
-		completed_process = run_subprocess_cmd([VENV_PYTHON_FILEPATH, "--version"])
+		completed_process = run_subprocess_cmd([VENV_PYTHON_FILEPATH.as_posix(), "--version"])
 		assert completed_process, "Failed to run the command."
 		status = completed_process.returncode
 	except:
@@ -343,16 +364,20 @@ def comfyui_nvidia() -> None:
 	assert status == 0, "Failed to activate the virtual environment."
 
 	# install proxy requirements
-	print('Installing proxy.py requirements.')
-	packages : List[str] = ["tqdm", "requests", "fastapi", "pydantic", "pillow", "websocket-client", "aiohttp", "uvicorn", "websockets"]
-	_, __ = run_command([VENV_PYTHON_FILEPATH, "-m", "pip", "install"] + packages, shell=True)
-	# TODO: check errors on above
+	if not get_fflag("proxy_requirements_installed"):
+		print('Installing proxy.py requirements.')
+		packages : List[str] = ["tqdm", "requests", "fastapi", "pydantic", "pillow", "websocket-client", "aiohttp", "uvicorn", "websockets"]
+		_, __ = run_command([VENV_PYTHON_FILEPATH.as_posix(), "-m", "pip", "install"] + packages, shell=True)
+		# TODO: check errors on above
+		set_fflag("requirements_installed", True)
 
 	# install ComfyUI/requirements.txt
-	print('Installing ComfyUI requirements.')
-	requirements_file = COMFYUI_DIRECTORY / "requirements.txt"
-	_, __ = run_command([VENV_PYTHON_FILEPATH, "-m", "pip", "install", "-r", requirements_file], shell=True)
-	# TODO: check errors on above
+	if not get_fflag("comfyui_requirements_installed"):
+		print('Installing ComfyUI requirements.')
+		requirements_file = COMFYUI_DIRECTORY / "requirements.txt"
+		_, __ = run_command([VENV_PYTHON_FILEPATH.as_posix(), "-m", "pip", "install", "-r", requirements_file], shell=True)
+		# TODO: check errors on above
+		set_fflag("requirements_installed", True)
 
 	# git clone custom_nodes
 	print('Cloning all custom nodes.')
@@ -362,11 +387,14 @@ def comfyui_nvidia() -> None:
 	# pip install custom_nodes requirements.txt
 	print('Installing custom nodes requirements.')
 	for folder_name in os.listdir(CUSTOM_NODES_FOLDER):
+		if get_fflag(f"node_{folder_name}_requirements_installed"):
+			continue
 		TARGET_FOLDER_REQUIREMENTS_FILE = CUSTOM_NODES_FOLDER / folder_name / "requirements.txt"
 		if os.path.exists(TARGET_FOLDER_REQUIREMENTS_FILE) is False:
 			continue # cannot find requirements.txt for this item name
 		print(f"Custom Nodes requirements filepath: {TARGET_FOLDER_REQUIREMENTS_FILE.as_posix()}")
-		_, __ = run_command([VENV_PYTHON_FILEPATH, "-m", "pip", "install", "-r", TARGET_FOLDER_REQUIREMENTS_FILE], shell=True)
+		_, __ = run_command([VENV_PYTHON_FILEPATH.as_posix(), "-m", "pip", "install", "-r", TARGET_FOLDER_REQUIREMENTS_FILE.as_posix()], shell=True)
+		set_fflag(f"node_{folder_name}_requirements_installed", True)
 
 	# download all checkpoint and lora models
 	print("Downloading missing checkpoints...")
@@ -391,11 +419,11 @@ def comfyui_nvidia() -> None:
 		arguments.append("--cpu")
 
 	# start comfyui
-	command1_args = [VENV_PYTHON_FILEPATH, COMFYUI_DIRECTORY / "main.py"] + arguments
+	command1_args = [VENV_PYTHON_FILEPATH.as_posix(), (COMFYUI_DIRECTORY / "main.py").as_posix()] + arguments
 	print("Running ComfyUI with the following commands:")
 	print(command1_args)
 
-	command2_args = [VENV_PYTHON_FILEPATH, INSTALLER_DIRECTORY / "proxy.py"]
+	command2_args = [VENV_PYTHON_FILEPATH.as_posix(), (INSTALLER_DIRECTORY / "proxy.py").as_posix()]
 	print("Running Proxy with the following commands:")
 	print(command2_args)
 
@@ -413,7 +441,7 @@ def comfyui_nvidia() -> None:
 def main() -> None:
 	print("Starting the install process for Windows!")
 
-	os.makedirs(TOOLS_DIRECTORY, exist_ok=True)
+	os.makedirs(TOOLS_DIRECTORY.as_posix(), exist_ok=True)
 
 	print("[IMPORTANT]")
 	print("Are you running the AI Image Generation with a AMD GPU? Use Task Manager to check your GPU 0.")
