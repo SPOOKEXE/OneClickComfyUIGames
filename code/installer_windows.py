@@ -162,11 +162,6 @@ def assert_path_length_limit() -> None:
 	path_length : int = len(current_path.as_posix()) + 70 # 70 being approx submodules of ComfyUI
 	print(f"Current path: {current_path}")
 	print(f"Path length: {path_length} characters")
-	if " " in current_path:
-		print("Please move/rename the directory so there is no spaces! This will cause problems.")
-		print("Press enter to restart...")
-		input("")
-		exit()
 	if path_length > 260:
 		print("Warning: Path length exceeds the Windows path limit of 260 characters. Please move the abyss diver game folder elsewhere.")
 		print("Press enter to continue...")

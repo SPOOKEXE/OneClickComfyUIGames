@@ -6,6 +6,7 @@ PUSHD tools && POPD || GOTO FIRSTTIME
 GOTO START
 
 :FIRSTTIME
+cls
 echo Welcome to the one-click comfyui tool to get you started!
 echo This version supports both AMD and NVIDIA GPUs on Windows.
 echo You will need to install TWO programs before continuing.
