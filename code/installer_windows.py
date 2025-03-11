@@ -266,6 +266,10 @@ def download_checkpoints_to_subfolder(models_folder : Path) -> None:
 		except Exception as e:
 			print(f'Failed to download checkpoint {filename}.')
 			print(e)
+			try:
+				os.remove(checkpoint_filepath)
+			except:
+				pass
 			assert False, f"Failed to download the {filename} checkpoint file."
 
 def download_loras_to_subfolder(models_folder : Path) -> None:
@@ -283,6 +287,10 @@ def download_loras_to_subfolder(models_folder : Path) -> None:
 		except Exception as e:
 			print(f'Failed to download lora {filename}.')
 			print(e)
+			try:
+				os.remove(lora_filepath)
+			except:
+				pass
 			assert False, f"Failed to download the {filename} lora file."
 
 def check_python_torch_compiled_with_cuda(python_file : Path) -> bool:
