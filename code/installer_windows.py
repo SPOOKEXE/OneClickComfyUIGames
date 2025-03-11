@@ -218,6 +218,7 @@ def check_for_proxy_and_comfyui_responses() -> None:
 def clone_custom_nodes_to_folder(custom_nodes_folder : Path) -> None:
 	"""Download all the stored comfyui custom nodes to the given folder"""
 	previous_directory = Path(os.getcwd()).absolute()
+	os.makedirs(custom_nodes_folder, exist_ok=True)
 	os.chdir(custom_nodes_folder)
 	for node_repository_url in COMFYUI_CUSTOM_NODES:
 		# attempt to clone all repositories into the directory
@@ -300,6 +301,7 @@ def comfyui_nvidia() -> None:
 	if os.path.exists(COMFYUI_DIRECTORY) is False:
 		print("Cloning the ComfyUI repository...")
 		previous_directory = Path(os.getcwd()).absolute()
+		os.makedirs(COMFYUI_DIRECTORY, exist_ok=True)
 		os.chdir(COMFYUI_DIRECTORY)
 		try:
 			completed_process = run_subprocess_cmd(["git", "clone", COMFYUI_MAIN_REPOSITORY_URL])
@@ -415,7 +417,7 @@ def main() -> None:
 
 	print("[IMPORTANT]")
 	print("Are you running the AI Image Generation with a AMD GPU? Use Task Manager to check your GPU 0.")
-	print("Enter 'yes'/'y' if you are.")
+	print("Enter 'yes'/'y' if you are, otherwise 'no'/'n'.")
 	if input("").lower() in ("y", "yes"):
 		#comfyui_amd()
 		raise NotImplementedError
