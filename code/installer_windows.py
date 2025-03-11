@@ -324,26 +324,7 @@ def update_python_torch_compiled_cuda(python_file : Path) -> bool:
 	_, __ = run_command([python_file.as_posix(), "-m", "pip", "install", "--upgrade", "torch", "torchaudio", "torchvision", "--index-url", index_url], shell=True)
 	print(f"Installed {index_url} cuda acceleration for torch.")
 
-def comfyui_nvidia() -> None:
-	COMFYUI_DIRECTORY = TOOLS_DIRECTORY / "ComfyUI"
-	print(f'ComfyUI install directory: {COMFYUI_DIRECTORY.as_posix()}')
-
-	if os.path.exists(COMFYUI_DIRECTORY) is False:
-		print("Cloning the ComfyUI repository...")
-		previous_directory = Path(os.getcwd()).absolute()
-		os.chdir(TOOLS_DIRECTORY)
-		try:
-			completed_process = run_subprocess_cmd(["git", "clone", COMFYUI_MAIN_REPOSITORY_URL])
-			assert completed_process, "Failed to run the command."
-			status = completed_process.returncode
-		except Exception as e:
-			print(e)
-			status = None
-		print(f"git clone status: {status}")
-		os.chdir(previous_directory)
-
-	assert os.path.exists(COMFYUI_DIRECTORY), f"Failed to clone the ComfyUI repository to {COMFYUI_DIRECTORY.as_posix()}"
-
+def comfyui_installed_shared_requirements(COMFYUI_DIRECTORY : Path):
 	VENV_DIRECTORY = COMFYUI_DIRECTORY / "venv"
 	VENV_PYTHON_FILEPATH = VENV_DIRECTORY / "Scripts" / "python.exe"
 	print(f"Venv Python Directory: {VENV_PYTHON_FILEPATH.as_posix()}")
@@ -376,15 +357,127 @@ def comfyui_nvidia() -> None:
 		print('Installing proxy.py requirements.')
 		packages : List[str] = ["tqdm", "requests", "fastapi", "pydantic", "pillow", "websocket-client", "aiohttp", "uvicorn", "websockets"]
 		_, __ = run_command([VENV_PYTHON_FILEPATH.as_posix(), "-m", "pip", "install"] + packages, shell=True)
-		# TODO: check errors on above
 		set_fflag("proxy_requirements_installed", True)
+
+def comfyui_amd() -> None:
+	COMFYUI_DIRECTORY = TOOLS_DIRECTORY / "ComfyUI-Zluda"
+	print(f'ComfyUI AMD install directory: {COMFYUI_DIRECTORY.as_posix()}')
+
+	if os.path.exists(COMFYUI_DIRECTORY) is False:
+		print("Attempting to clone ComfyUI to the directory.")
+		repository_url = COMFYUI_AMD_GPU_REPOSITORY_URL
+		previous_directory = os.getcwd()
+		os.chdir(TOOLS_DIRECTORY)
+		try:
+			completed_process = run_subprocess_cmd(["git", "clone", repository_url])
+			assert completed_process, "Failed to run the command."
+			status = completed_process.returncode
+		except Exception as e:
+			print(e)
+			status = None
+		print(f"git clone status: {status}")
+		os.chdir(previous_directory)
+
+	assert os.path.exists(COMFYUI_DIRECTORY), f"Failed to clone the ComfyUI repository to {COMFYUI_DIRECTORY.as_posix()}"
+
+	print("Due to how the AMD GPU version needs to be support, you will have to do some manual dependency installation following the repository's guide.")
+	if input("Have you installed the dependencies needed already? (y/n) ").lower() == "n":
+		print(COMFYUI_AMD_GPU_REPOSITORY_URL + "?tab=readme-ov-file#dependencies")
+		print("Open this repository and follow the guide to install the dependencies.")
+		print(f"The ComfyUI directory can be found at: {COMFYUI_DIRECTORY.absolute().as_posix()}")
+		print("Press enter to restart the one-click...")
+		input("")
+		exit(1)
+
+	print("Dependencies have been installed.")
+	comfyui_installed_shared_requirements(COMFYUI_DIRECTORY)
+	VENV_DIRECTORY = COMFYUI_DIRECTORY / "venv"
+	VENV_PYTHON_FILEPATH = VENV_DIRECTORY / "Scripts" / "python.exe"
+
+	# start comfyui
+	env = dict(
+		os.environ,
+		ZLUDA_COMGR_LOG_LEVEL="1",
+		python=VENV_PYTHON_FILEPATH.as_posix(),
+		py=VENV_PYTHON_FILEPATH.as_posix(),
+		VENV_DIR=VENV_DIRECTORY.as_posix()
+	)
+
+	print("Only certain AMD gpus are actually supported and can be viewed at https://rocm.docs.amd.com/projects/install-on-linux/en/latest/reference/system-requirements.html")
+	print("Do you have an older or unsupported AMD card? (y/n)? ")
+	if input("Note: this is a experimental workaround and if this fails your device is not supported. ").lower() == "y":
+		env['HSA_OVERRIDE_GFX_VERSION'] = "10.3.0"
+
+	if input("Do you have built-in graphics in your CPU (y/n)? ").lower() == "y":
+		env['HIP_VISIBLE_DEVICES'] = "1"
+
+	# force all environemnts to be string
+	for key, value in env.items():
+		if not isinstance(value, str):
+			env[key] = str(value)
+
+	zluda_zip = COMFYUI_DIRECTORY / "zluda.zip"
+	if os.path.exists(zluda_zip):
+		print("Left over zluda.zip was found - deleting.")
+		os.remove(zluda_zip)
+
+	ZLUDA_PATCHZLUDA_BATCH = COMFYUI_DIRECTORY / "patchzluda.bat"
+	assert os.path.exists(ZLUDA_PATCHZLUDA_BATCH), "Could not find the patchzluda.bat in the ComfyUI-Zluda directory."
+	_, __ = run_command([ZLUDA_PATCHZLUDA_BATCH.as_posix()])
+
+	ZLUDA_INSTALL_BATCH = COMFYUI_DIRECTORY / "install.bat"
+	assert os.path.exists(ZLUDA_INSTALL_BATCH), "Could not find the install.bat in the ComfyUI-Zluda directory."
+
+	PROXY_PYTHON_FILE = INSTALLER_DIRECTORY / "proxy.py"
+	assert os.path.exists(PROXY_PYTHON_FILE), "The local image generation proxy.py does not exist!"
+
+	command2_args = [VENV_PYTHON_FILEPATH.as_posix(), PROXY_PYTHON_FILE.as_posix()]
+	print("Running Proxy with the following commands:")
+	print(command2_args)
+
+	print("Starting both ComfyUI and Proxy scripts.")
+
+	thread1 = threading.Thread(target=lambda : run_command([ZLUDA_INSTALL_BATCH.as_posix()], env=env))
+	thread2 = threading.Thread(target=lambda : run_command(command2_args, env=env))
+	thread3 = threading.Thread(target=lambda : check_for_proxy_and_comfyui_responses())
+	thread1.start()
+	thread2.start()
+	thread3.start()
+	thread1.join()
+	thread2.join()
+	thread3.join()
+
+	print("Both ComfyUI and Proxy scripts have finished.")
+
+def comfyui_nvidia() -> None:
+	COMFYUI_DIRECTORY = TOOLS_DIRECTORY / "ComfyUI"
+	print(f'ComfyUI install directory: {COMFYUI_DIRECTORY.as_posix()}')
+
+	if os.path.exists(COMFYUI_DIRECTORY) is False:
+		print("Cloning the ComfyUI repository...")
+		previous_directory = Path(os.getcwd()).absolute()
+		os.chdir(TOOLS_DIRECTORY)
+		try:
+			completed_process = run_subprocess_cmd(["git", "clone", COMFYUI_MAIN_REPOSITORY_URL])
+			assert completed_process, "Failed to run the command."
+			status = completed_process.returncode
+		except Exception as e:
+			print(e)
+			status = None
+		print(f"git clone status: {status}")
+		os.chdir(previous_directory)
+
+	assert os.path.exists(COMFYUI_DIRECTORY), f"Failed to clone the ComfyUI repository to {COMFYUI_DIRECTORY.as_posix()}"
+
+	comfyui_installed_shared_requirements(COMFYUI_DIRECTORY)
+	VENV_DIRECTORY = COMFYUI_DIRECTORY / "venv"
+	VENV_PYTHON_FILEPATH = VENV_DIRECTORY / "Scripts" / "python.exe"
 
 	# install ComfyUI/requirements.txt
 	if not get_fflag("comfyui_requirements_installed"):
 		print('Installing ComfyUI requirements.')
 		requirements_file = COMFYUI_DIRECTORY / "requirements.txt"
 		_, __ = run_command([VENV_PYTHON_FILEPATH.as_posix(), "-m", "pip", "install", "-r", requirements_file], shell=True)
-		# TODO: check errors on above
 		set_fflag("comfyui_requirements_installed", True)
 
 	# git clone custom_nodes
@@ -450,15 +543,22 @@ def comfyui_nvidia() -> None:
 
 def main() -> None:
 	print("Starting the install process for Windows!")
+	print("- @spookexe was here")
 
 	os.makedirs(TOOLS_DIRECTORY.as_posix(), exist_ok=True)
 
 	print("[IMPORTANT]")
+	print("The first generation may take a moment as it needs to load the AI models into memory.")
+	print("[IMPORTANT]")
 	print("Are you running the AI Image Generation with a AMD GPU? Use Task Manager to check your GPU 0.")
 	print("Enter 'yes'/'y' if you are, otherwise 'no'/'n'.")
 	if input("").lower() in ("y", "yes"):
-		#comfyui_amd()
-		raise NotImplementedError
+		print("="*10)
+		print("[NOTICE]")
+		print("This version takes a minute to load due to dependencies.")
+		print("You will also be required to do some manual installation later on.")
+		print("="*10)
+		comfyui_amd()
 	else:
 		comfyui_nvidia()
 
