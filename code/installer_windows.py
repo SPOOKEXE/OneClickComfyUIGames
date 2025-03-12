@@ -422,10 +422,12 @@ def comfyui_amd() -> None:
 		os.remove(zluda_zip)
 
 	ZLUDA_PATCHZLUDA_BATCH = COMFYUI_DIRECTORY / "patchzluda.bat"
+	print(f"Running {ZLUDA_PATCHZLUDA_BATCH.as_posix()} with cwd={COMFYUI_DIRECTORY.as_posix()}")
 	assert os.path.exists(ZLUDA_PATCHZLUDA_BATCH), "Could not find the patchzluda.bat in the ComfyUI-Zluda directory."
-	_, __ = run_command([ZLUDA_PATCHZLUDA_BATCH.as_posix()])
+	_, __ = run_command([ZLUDA_PATCHZLUDA_BATCH.as_posix()], cwd=COMFYUI_DIRECTORY.as_posix())
 
 	ZLUDA_INSTALL_BATCH = COMFYUI_DIRECTORY / "install.bat"
+	print(f"Running {ZLUDA_INSTALL_BATCH.as_posix()} with cwd={COMFYUI_DIRECTORY.as_posix()}")
 	assert os.path.exists(ZLUDA_INSTALL_BATCH), "Could not find the install.bat in the ComfyUI-Zluda directory."
 
 	PROXY_PYTHON_FILE = INSTALLER_DIRECTORY / "proxy.py"
@@ -437,15 +439,15 @@ def comfyui_amd() -> None:
 
 	print("Starting both ComfyUI and Proxy scripts.")
 
-	thread1 = threading.Thread(target=lambda : run_command([ZLUDA_INSTALL_BATCH.as_posix()], env=env))
-	thread2 = threading.Thread(target=lambda : run_command(command2_args, env=env))
-	thread3 = threading.Thread(target=lambda : check_for_proxy_and_comfyui_responses())
+	thread1 = threading.Thread(target=lambda : run_command([ZLUDA_INSTALL_BATCH.as_posix()], env=env, cwd=COMFYUI_DIRECTORY.as_posix()))
+	thread2 = threading.Thread(target=lambda : run_command(command2_args, env=env, cwd=INSTALLER_DIRECTORY.as_posix()))
+	# thread3 = threading.Thread(target=lambda : check_for_proxy_and_comfyui_responses())
 	thread1.start()
 	thread2.start()
-	thread3.start()
+	# thread3.start()
 	thread1.join()
 	thread2.join()
-	thread3.join()
+	# thread3.join()
 
 	print("Both ComfyUI and Proxy scripts have finished.")
 
