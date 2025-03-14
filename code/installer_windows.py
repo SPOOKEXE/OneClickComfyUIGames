@@ -245,10 +245,7 @@ def clone_custom_nodes_to_folder(CUSTOM_NODES_FOLDER : Path) -> None:
 	for node_repository_url in COMFYUI_CUSTOM_NODES:
 		# attempt to clone all repositories into the directory
 		print(f'Cloning: {node_repository_url}')
-		_ = run_subprocess_cmd(["git", "clone", node_repository_url])
-		# attempt to update the folders if needed
-		print(f'Updating: {node_repository_url}')
-		_ = run_subprocess_cmd(["git", "clone", node_repository_url])
+		_ = run_subprocess_cmd(["git", "clone", node_repository_url], cwd=CUSTOM_NODES_FOLDER.as_posix())
 	os.chdir(previous_directory)
 
 def download_checkpoints_to_subfolder(models_folder : Path) -> None:
