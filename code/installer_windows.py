@@ -391,6 +391,30 @@ def comfyui_amd() -> None:
 	VENV_DIRECTORY = COMFYUI_DIRECTORY / "venv"
 	VENV_PYTHON_FILEPATH = VENV_DIRECTORY / "Scripts" / "python.exe"
 
+	# git clone custom_nodes
+	print('Cloning all custom nodes.')
+	CUSTOM_NODES_FOLDER = COMFYUI_DIRECTORY / "custom_nodes"
+	clone_custom_nodes_to_folder(CUSTOM_NODES_FOLDER)
+
+	# pip install custom_nodes requirements.txt
+	print('Installing custom nodes requirements.')
+	for folder_name in os.listdir(CUSTOM_NODES_FOLDER):
+		if get_fflag(f"node_{folder_name}_requirements_installed"):
+			continue
+		TARGET_FOLDER_REQUIREMENTS_FILE = CUSTOM_NODES_FOLDER / folder_name / "requirements.txt"
+		if os.path.exists(TARGET_FOLDER_REQUIREMENTS_FILE) is False:
+			continue # cannot find requirements.txt for this item name
+		print(f"Custom Nodes requirements filepath: {TARGET_FOLDER_REQUIREMENTS_FILE.as_posix()}")
+		_, __ = run_command([VENV_PYTHON_FILEPATH.as_posix(), "-m", "pip", "install", "-r", TARGET_FOLDER_REQUIREMENTS_FILE.as_posix()], shell=True)
+		set_fflag(f"node_{folder_name}_requirements_installed", True)
+
+	# download all checkpoint and lora models
+	print("Downloading missing checkpoints...")
+	download_checkpoints_to_subfolder(COMFYUI_DIRECTORY / "models" / "checkpoints")
+
+	print("Downloading missing loras...")
+	download_loras_to_subfolder(COMFYUI_DIRECTORY / "models" / "loras")
+
 	# start comfyui
 	env = dict(
 		os.environ,
