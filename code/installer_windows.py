@@ -353,7 +353,7 @@ def comfyui_installed_shared_requirements(COMFYUI_DIRECTORY : Path):
 	if not get_fflag("proxy_requirements_installed"):
 		print('Installing proxy.py requirements.')
 		packages : List[str] = ["tqdm", "requests", "fastapi", "pydantic", "pillow", "websocket-client", "aiohttp", "uvicorn", "websockets"]
-		_, __ = run_command([VENV_PYTHON_FILEPATH.as_posix(), "-m", "pip", "install"] + packages, shell=True)
+		_, __ = run_command([VENV_PYTHON_FILEPATH.as_posix(), "-m", "pip", "install"] + packages, shell=False)
 		set_fflag("proxy_requirements_installed", True)
 
 def comfyui_amd() -> None:
