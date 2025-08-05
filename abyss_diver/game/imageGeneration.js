@@ -824,7 +824,7 @@ setup.ComfyUI_GenerateAdvancedHTMLPage = function() {
 }
 
 setup.updateComfyUIStatus = async function() {
-	const url = "http://127.0.0.1:12500/echo";
+	const url = "http://127.0.0.1:8188";
 
 	var is_running = false;
 
@@ -2336,7 +2336,6 @@ function generateUUID() {
 	});
 }
 
-// Helper to convert blob to base64
 async function blobToBase64(blob) {
 	return new Promise((resolve, reject) => {
 		const reader = new FileReader();
