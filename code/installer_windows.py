@@ -53,7 +53,7 @@ def set_fflag(key : str, value : bool):
 INSTALLER_DIRECTORY : Path = Path(os.path.dirname(os.path.abspath(__file__)))
 TOOLS_DIRECTORY : Path = INSTALLER_DIRECTORY / "tools"
 
-SUPPORTED_PYTHON_VERSIONS : Tuple[str] = ("3.10", "3.11")
+SUPPORTED_PYTHON_VERSIONS : Tuple[str] = ("3.10", "3.11", "3.12", "3.13")
 
 COMFYUI_MAIN_REPOSITORY_URL : str = "https://github.com/comfyanonymous/ComfyUI"
 COMFYUI_AMD_GPU_REPOSITORY_URL : str = "https://github.com/patientx/ComfyUI-Zluda"
@@ -61,7 +61,7 @@ COMFYUI_AMD_GPU_REPOSITORY_URL : str = "https://github.com/patientx/ComfyUI-Zlud
 COMMAND_LINE_ARGS_FOR_COMFYUI : List[str] = [
 	# custom command line arguments for comfyui - separate each string by comma
 	# e.g. ["--listen", "--api", "--highvram", "--somevalue", "5"]
-
+	"--enable-cors-header", "*"
 ]
 
 COMFYUI_CUSTOM_NODES : List[str] = [
@@ -210,30 +210,20 @@ def download_file(url: str, filepath: Path, chunk_size: int = 64) -> None:
 	progress_bar.close()
 	print(f"File downloaded to {filepath.as_posix()}")
 
-def check_for_proxy_and_comfyui_responses() -> None:
-	"""Ping the proxy on 127.0.0.1:12500/docs and ComfyUI on 127.0.0.1:8188 to see if both are available to the user."""
+def check_for_comfyui_responses() -> None:
+	"""Ping ComfyUI on 127.0.0.1:8188 to see if both its available."""
 	import requests
-
-	# wait a period of time as it may take a second to install.
-	# TODO: may be too fast for people with slow internet - find a better method
-	time.sleep(20)
-
-	proxy_ip : str = "http://127.0.0.1:12500/echo"
-	try:
-		r = requests.get(proxy_ip)
-		if r.status_code != 200:
-			raise
-	except:
-		print(f"Cannot connect to the proxy on {proxy_ip}! The proxy may have not started in time or failed to startup!")
 
 	comfyui_ip = "http://127.0.0.1:8188"
 	try:
 		r = requests.get(comfyui_ip)
-		if r.status_code != 200: raise
+		if r.status_code != 200:
+			raise
 	except:
 		print(f"Cannot connect to ComfyUI on {comfyui_ip}! ComfyUI may not have started or failed to startup!")
+		return
 
-	print("Successfully connected to both ComfyUI and the Proxy!")
+	print("Successfully connected to ComfyUI!")
 	print("Head to Abyss Diver and open the AI Portrait page!")
 	print("")
 
@@ -349,13 +339,6 @@ def comfyui_installed_shared_requirements(COMFYUI_DIRECTORY : Path):
 	print("Venv python.exe does exist." if os.path.exists(VENV_PYTHON_FILEPATH) else "Venv python.exe does NOT exist!")
 	assert status == 0, "Failed to activate the virtual environment."
 
-	# install proxy requirements
-	if not get_fflag("proxy_requirements_installed"):
-		print('Installing proxy.py requirements.')
-		packages : List[str] = ["tqdm", "requests", "fastapi", "pydantic", "pillow", "websocket-client", "aiohttp", "uvicorn", "websockets"]
-		_, __ = run_command([VENV_PYTHON_FILEPATH.as_posix(), "-m", "pip", "install"] + packages, shell=False)
-		set_fflag("proxy_requirements_installed", True)
-
 def comfyui_amd() -> None:
 	COMFYUI_DIRECTORY = TOOLS_DIRECTORY / "ComfyUI-Zluda"
 	print(f'ComfyUI AMD install directory: {COMFYUI_DIRECTORY.as_posix()}')
@@ -451,26 +434,16 @@ def comfyui_amd() -> None:
 	print(f"Running {ZLUDA_INSTALL_BATCH.as_posix()} with cwd={COMFYUI_DIRECTORY.as_posix()}")
 	assert os.path.exists(ZLUDA_INSTALL_BATCH), "Could not find the install.bat in the ComfyUI-Zluda directory."
 
-	PROXY_PYTHON_FILE = INSTALLER_DIRECTORY / "proxy.py"
-	assert os.path.exists(PROXY_PYTHON_FILE), "The local image generation proxy.py does not exist!"
-
-	command2_args = [VENV_PYTHON_FILEPATH.as_posix(), PROXY_PYTHON_FILE.as_posix()]
-	print("Running Proxy with the following commands:")
-	print(command2_args)
-
-	print("Starting both ComfyUI and Proxy scripts.")
+	print("Starting ComfyUI.")
 
 	thread1 = threading.Thread(target=lambda : run_command([ZLUDA_INSTALL_BATCH.as_posix()], env=env, cwd=COMFYUI_DIRECTORY.as_posix()))
-	thread2 = threading.Thread(target=lambda : run_command(command2_args, env=env, cwd=INSTALLER_DIRECTORY.as_posix()))
-	# thread3 = threading.Thread(target=lambda : check_for_proxy_and_comfyui_responses())
+	# thread3 = threading.Thread(target=lambda : check_for_comfyui_responses())
 	thread1.start()
-	thread2.start()
 	# thread3.start()
 	thread1.join()
-	thread2.join()
 	# thread3.join()
 
-	print("Both ComfyUI and Proxy scripts have finished.")
+	print("All threads have finished.")
 
 def comfyui_nvidia() -> None:
 	COMFYUI_DIRECTORY = TOOLS_DIRECTORY / "ComfyUI"
@@ -549,20 +522,14 @@ def comfyui_nvidia() -> None:
 	print("Running ComfyUI with the following commands:")
 	print(command1_args)
 
-	command2_args = [VENV_PYTHON_FILEPATH.as_posix(), (INSTALLER_DIRECTORY / "proxy.py").as_posix()]
-	print("Running Proxy with the following commands:")
-	print(command2_args)
-
 	print("Starting threads...")
 	thread1 = threading.Thread(target=lambda : run_command(command1_args))
-	thread2 = threading.Thread(target=lambda : run_command(command2_args))
-	thread3 = threading.Thread(target=check_for_proxy_and_comfyui_responses)
+	thread2 = threading.Thread(target=check_for_comfyui_responses)
 	thread1.start()
 	thread2.start()
-	thread3.start()
 	thread1.join()
 	thread2.join()
-	thread3.join()
+	print("All threads have finished.")
 
 def main() -> None:
 	print("Starting the install process for Windows!")

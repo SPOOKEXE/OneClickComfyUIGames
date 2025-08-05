@@ -1,0 +1,189 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>ComfyUI Image Generation Test</title>
+	<style>
+		body { font-family: Arial, sans-serif; margin: 20px; }
+		label { font-weight: bold; }
+		textarea { width: 100%; max-width: 600px; }
+		button { margin-top: 10px; padding: 10px 20px; }
+		#result { margin-top: 20px; }
+		#result img { max-width: 100%; height: auto; margin-bottom: 10px; }
+	</style>
+</head>
+<body>
+	<h1>ComfyUI Image Generation Test</h1>
+	<p>Use this page to test image generation with the provided ComfyUI workflow. Enter prompts and click "Generate" to produce an image.</p>
+
+	<label for="positive">Positive Prompt:</label><br>
+	<textarea id="positive" rows="4" cols="50" placeholder="Enter positive prompt (e.g., a detailed portrait of a person)"></textarea><br><br>
+
+	<label for="negative">Negative Prompt:</label><br>
+	<textarea id="negative" rows="4" cols="50" placeholder="Enter negative prompt (e.g., blurry, low quality)"></textarea><br><br>
+
+	<button onclick="generateImage()">Generate</button>
+
+	<div id="result"></div>
+
+	<script src="comfyui.js"></script>
+	<script>
+		const SIMPLE_T2I_PORTRAIT_WORKFLOW_REMOVE_BACKGROUND = {
+			"5": {
+				"inputs": {
+					"ckpt_name": "hassakuXLPony_v13BetterEyesVersion.safetensors"
+				},
+				"class_type": "CheckpointLoaderSimple",
+				"_meta": {
+					"title": "Load Checkpoint"
+				}
+			},
+			"9": {
+				"inputs": {
+					"text": "",
+					"clip": [
+						"5",
+						1
+					]
+				},
+				"class_type": "CLIPTextEncode",
+				"_meta": {
+					"title": "Positive Prompt"
+				}
+			},
+			"10": {
+				"inputs": {
+					"text": "",
+					"clip": [
+						"5",
+						1
+					]
+				},
+				"class_type": "CLIPTextEncode",
+				"_meta": {
+					"title": "Negative Prompt"
+				}
+			},
+			"11": {
+				"inputs": {
+					"seed": -1,
+					"steps": 35,
+					"cfg": 9,
+					"sampler_name": "euler",
+					"scheduler": "normal",
+					"denoise": 1,
+					"model": [
+						"5",
+						0
+					],
+					"positive": [
+						"9",
+						0
+					],
+					"negative": [
+						"10",
+						0
+					],
+					"latent_image": [
+						"12",
+						0
+					]
+				},
+				"class_type": "KSampler",
+				"_meta": {
+					"title": "KSampler"
+				}
+			},
+			"12": {
+				"inputs": {
+					"width": 1024,
+					"height": 1024,
+					"batch_size": 1
+				},
+				"class_type": "EmptyLatentImage",
+				"_meta": {
+					"title": "Empty Latent Image"
+				}
+			},
+			"15": {
+				"inputs": {
+					"samples": [
+						"11",
+						0
+					],
+					"vae": [
+						"5",
+						2
+					]
+				},
+				"class_type": "VAEDecode",
+				"_meta": {
+					"title": "VAE Decode"
+				}
+			},
+			"17": {
+				"inputs": {
+					"threshold": 0.85,
+					"torchscript_jit": "default",
+					"image": [
+						"15",
+						0
+					]
+				},
+				"class_type": "InspyrenetRembgAdvanced",
+				"_meta": {
+					"title": "Inspyrenet Rembg Advanced"
+				}
+			},
+			"18": {
+				"inputs": {
+					"filename_prefix": "TRANSPARENT_",
+					"images": [
+						"17",
+						0
+					]
+				},
+				"class_type": "SaveImage",
+				"_meta": {
+					"title": "Save Image"
+				}
+			}
+		};
+
+		async function generateImage() {
+			const positivePrompt = document.getElementById('positive').value.trim();
+			const negativePrompt = document.getElementById('negative').value.trim();
+
+			// Clone the workflow to avoid modifying the original
+			const workflow = JSON.parse(JSON.stringify(SIMPLE_T2I_PORTRAIT_WORKFLOW_REMOVE_BACKGROUND));
+
+			// Set prompts
+			workflow["9"].inputs.text = positivePrompt || ''; // Default to empty if not provided
+			workflow["10"].inputs.text = negativePrompt || '';
+
+			// Set random seed if -1
+			if (workflow["11"].inputs.seed === -1) {
+				workflow["11"].inputs.seed = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
+			}
+
+			const resultDiv = document.getElementById('result');
+			resultDiv.innerHTML = '<p>Generating image... Please wait.</p>';
+
+			try {
+				const base64Images = await generateWorkflowImage(workflow);
+				resultDiv.innerHTML = '';
+				base64Images.forEach(base64 => {
+					const img = document.createElement('img');
+					img.src = `data:image/png;base64,${base64}`;
+					resultDiv.appendChild(img);
+				});
+			} catch (error) {
+				console.error('Generation error:', error);
+				resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+			}
+		}
+	</script>
+</body>
+</html>
