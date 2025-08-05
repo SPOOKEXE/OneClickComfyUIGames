@@ -2604,7 +2604,7 @@ setup.comfyUI_GeneratePortrait = async function() {
 		// }
 		// workflow was updated
 		last_workflow = JSON.stringify(workflow);
-		data = await generateWorkflowImage(workflow);
+		data = {'images' : await generateWorkflowImage(workflow)};
 	} catch (error) {
 		console.error('Unable to invoke ComfyUI generator: ', error);
 		is_generation_busy = false;
