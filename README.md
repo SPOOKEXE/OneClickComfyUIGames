@@ -58,3 +58,5 @@ This is a guide on how to integrate this into your game.
 All the code you need is in the `/dev/` folder, specifically the `comfyui.js` file which will let you connect to any ComfyUI instance with `--enable-cores-header *` flag enabled.
 
 You can additionally test this locally using the `comfyui.html` in the `/dev/` folder, which provides a simple interface to generate images.
+
+If you want the one-click file, that is also available in the `/dev/` folder. At the moment only Windows (NVIDIA/AMD) is supported in it, but you can manually install ComfyUI to support other platforms / GPUs.
