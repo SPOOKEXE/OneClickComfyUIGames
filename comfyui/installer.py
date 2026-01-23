@@ -186,7 +186,7 @@ def download_file_wrapper(folder: Path, filename: str, url: Optional[str]):
 	if url is None:
 		print(f'File {filename} has no download url.')
 		return
-	filepath = folder / "checkpoints" / filename
+	filepath = folder / filename
 	if filepath.exists():
 		print(f"File {filename} is already installed.")
 		return
@@ -352,6 +352,9 @@ def run_windows_installer() -> None:
 
 	install_comfyui_requirements_shared(TOOLS_DIRECTORY)
 
+	download_checkpoints_to_subfolder(comfyui_directory / "models")
+	download_loras_to_subfolder(comfyui_directory / "models")
+
 	os.chdir(comfyui_directory)
 
 	print("-"*10)
@@ -372,6 +375,9 @@ def run_mac_installer() -> None:
 	os.chdir(INSTALLER_DIRECTORY)
 
 	install_comfyui_requirements_shared(TOOLS_DIRECTORY)
+
+	download_checkpoints_to_subfolder(comfyui_directory / "models")
+	download_loras_to_subfolder(comfyui_directory / "models")
 
 	os.chdir(comfyui_directory)
 
@@ -408,6 +414,9 @@ def run_linux_installer() -> None:
 	os.chdir(INSTALLER_DIRECTORY)
 
 	install_comfyui_requirements_shared(TOOLS_DIRECTORY)
+
+	download_checkpoints_to_subfolder(comfyui_directory / "models")
+	download_loras_to_subfolder(comfyui_directory / "models")
 
 	os.chdir(comfyui_directory)
 

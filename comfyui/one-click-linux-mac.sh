@@ -1,8 +1,8 @@
 #!/bin/bash
 
-:: YOU MAY NEED TO RUN \`chmod +x ./one-click-linux-mac.sh\` to run the file
-:: Or for Linux Mint and similar, right click, allow running, and run file - or open file.
-:: We recommend running in terminal as it will show you any errors that occur.
+# YOU MAY NEED TO RUN \`chmod +x ./one-click-linux-mac.sh\` to run the file
+# Or for Linux Mint and similar, right click, allow running, and run file - or open file.
+# We recommend running in terminal as it will show you any errors that occur.
 
 # Check if tools has been downloaded, skip introduction
 if [ -d "tools" ]; then
