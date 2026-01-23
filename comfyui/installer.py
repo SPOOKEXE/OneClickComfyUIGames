@@ -156,12 +156,12 @@ class WindowsMisc:
 		print(f"Current path: {current_path}")
 		print(f"Path length: {path_length} characters")
 		if path_length > 260:
-			print("Warning: Path length exceeds the Windows path limit of 260 characters. Please move the abyss diver game folder elsewhere.")
+			print("Warning: Path length exceeds the Windows path limit of 260 characters. Please move the comfyui one-click folder elsewhere.")
 			print("Press enter to continue...")
 			input("")
 			exit()
 		if path_length > 240:
-			print("Warning: Path length is close to the Windows path limit. Please move the abyss diver game folder elsewhere.")
+			print("Warning: Path length is close to the Windows path limit. Please move the comfyui one-click folder elsewhere.")
 			print("Press enter to continue...")
 			input("")
 			exit()
@@ -438,7 +438,7 @@ def main() -> None:
 	except ImportError:
 		if sys.argv[1] == "1":
 			print("requests and tqdm were not installed even after script restart!")
-			print(f"Try manually install it by opening a terminal in the {INSTALLER_DIRECTORY.as_posix()} directory and doing `uv init && uv add requests tqdm`.")
+			print(f"Try manually install it by opening a terminal in the {INSTALLER_DIRECTORY.as_posix()} directory and doing `uv init && uv venv && uv add requests tqdm`.")
 			exit(1)
 		print("requests and tqdm were not successfully hot loaded in, attempting script restart")
 		status = CommandsManager.run_process("uv run --script installer.py 1")
@@ -456,6 +456,8 @@ def main() -> None:
 	elif platform.system() == "Darwin":
 		print('Running Mac.')
 		run_mac_installer()
+	else:
+		print(f"Unknown platform! {platform.system()}")
 
 if __name__ == '__main__':
 	main()
