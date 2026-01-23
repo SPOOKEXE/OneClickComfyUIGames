@@ -14,8 +14,6 @@ View your related section below.
 
 ### Manual Installation of ComfyUI
 
-For other GPUs apart from NVIDIA, see the OTHER GPUs section below.
-
 1. Open a Command Prompt in the directory where you want ComfyUI to be.
 2. Run `git clone https://github.com/comfyanonymous/ComfyUI`
 3. Run `cd ComfyUI`
@@ -25,7 +23,7 @@ For other GPUs apart from NVIDIA, see the OTHER GPUs section below.
 7. Run `uv pip install -r requirements.txt`
 8. Run `uv pip install -r custom_nodes\ComfyUI-Inspyrenet-Rembg\requirements.txt`
 
-### GPU Installation
+### GPU Installation (only for manual installation)
 
 #### WINDOWS & LINUX
 
