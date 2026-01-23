@@ -429,7 +429,7 @@ def main() -> None:
 	except ImportError:
 		if sys.argv[1] == "1":
 			print("requests and tqdm were not installed even after script restart!")
-			print(f"Try manually install it by opening a terminal in the {INSTALLER_DIRECTORY.as_posix()} directory and doing `uv add requests tqdm`.")
+			print(f"Try manually install it by opening a terminal in the {INSTALLER_DIRECTORY.as_posix()} directory and doing `uv init && uv add requests tqdm`.")
 			exit(1)
 		print("requests and tqdm were not successfully hot loaded in, attempting script restart")
 		status = CommandsManager.run_process("uv run --script installer.py 1")
