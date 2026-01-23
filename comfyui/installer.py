@@ -400,7 +400,7 @@ def run_linux_installer() -> None:
 		_ = CommandsManager.run_command(["uv", "add", "torch", "torchvision", "torchaudio"])
 	elif compute_device == 1:
 		print("CUDA")
-		# pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu130
+		# pip install torch torchvision torchaudio --index https://download.pytorch.org/whl/cu130
 		_ = CommandsManager.run_command(["uv", "add", "torch", "torchvision", "torchaudio", "--index", WINDOWS_TORCH_CUDA_INDEX_URL])
 	elif compute_device == 2:
 		print("AMD")
