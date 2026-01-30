@@ -330,23 +330,25 @@ def run_windows_installer() -> None:
 
 	args = ["uv", "run", "main.py"]
 
-	compute_device: int = get_compute_device()
-	if compute_device == 0:
-		print("CPU")
-		# pip install torch torchvision torchaudio
-		_ = CommandsManager.run_command(["uv", "add", "torch", "torchvision", "torchaudio"])
-	elif compute_device == 1:
-		print("CUDA")
-		# pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu130
-		_ = CommandsManager.run_command(["uv", "add", "torch", "torchvision", "torchaudio", "--index", WINDOWS_TORCH_CUDA_INDEX_URL])
-	elif compute_device == 2:
-		print("AMD")
-		# pip install torch torchvision torchaudio --index https://download.pytorch.org/whl/rocm6.4
-		_ = CommandsManager.run_command(["uv", "add", "torch", "torchvision", "torchaudio", "--index", WINDOWS_TORCH_ROCM_INDEX_URL])
-	elif compute_device == 3:
-		print("INTEL")
-		# pip install torch torchvision torchaudio --index https://download.pytorch.org/whl/xpu
-		_ = CommandsManager.run_command(["uv", "add", "torch", "torchvision", "torchaudio", "--index", WINDOWS_TORCH_INTEL_INDEX_URL])
+	# compute_device: int = get_compute_device()
+	# if compute_device == 0:
+	# 	print("CPU")
+	# 	# pip install torch torchvision torchaudio
+	# 	_ = CommandsManager.run_command(["uv", "add", "torch", "torchvision", "torchaudio"])
+	# elif compute_device == 1:
+	# 	print("CUDA")
+	# 	# pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu130
+	# 	_ = CommandsManager.run_command(["uv", "add", "torch", "torchvision", "torchaudio", "--index", WINDOWS_TORCH_CUDA_INDEX_URL])
+	# elif compute_device == 2:
+	# 	print("AMD")
+	# 	# pip install torch torchvision torchaudio --index https://download.pytorch.org/whl/rocm6.4
+	# 	_ = CommandsManager.run_command(["uv", "add", "torch", "torchvision", "torchaudio", "--index", WINDOWS_TORCH_ROCM_INDEX_URL])
+	# elif compute_device == 3:
+	# 	print("INTEL")
+	# 	# pip install torch torchvision torchaudio --index https://download.pytorch.org/whl/xpu
+	# 	_ = CommandsManager.run_command(["uv", "add", "torch", "torchvision", "torchaudio", "--index", WINDOWS_TORCH_INTEL_INDEX_URL])
+
+	_ = CommandsManager.run_command(["uv", "pip", "install", "torch", "torchvision", "torchaudio", "--torch-backend", "auto"])
 
 	os.chdir(INSTALLER_DIRECTORY)
 
@@ -370,7 +372,7 @@ def run_mac_installer() -> None:
 	args = ["uv", "run", "main.py"]
 
 	# pip3 install --pre torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/nightly/cpu
-	_ = CommandsManager.run_command(["uv", "add", "--prerelease", "explicit", "torch", "torchvision", "torchaudio", "--index", MAC_PRERELEASE_INDEX_URL])
+	_ = CommandsManager.run_command(["uv", "pip", "install", "--prerelease", "explicit", "torch", "torchvision", "torchaudio", "--index", MAC_PRERELEASE_INDEX_URL])
 
 	os.chdir(INSTALLER_DIRECTORY)
 
@@ -393,23 +395,26 @@ def run_linux_installer() -> None:
 
 	args = ["uv", "run", "main.py"]
 
-	compute_device: int = get_compute_device()
-	if compute_device == 0:
-		print("CPU")
-		# pip install torch torchvision torchaudio
-		_ = CommandsManager.run_command(["uv", "add", "torch", "torchvision", "torchaudio"])
-	elif compute_device == 1:
-		print("CUDA")
-		# pip install torch torchvision torchaudio --index https://download.pytorch.org/whl/cu130
-		_ = CommandsManager.run_command(["uv", "add", "torch", "torchvision", "torchaudio", "--index", WINDOWS_TORCH_CUDA_INDEX_URL])
-	elif compute_device == 2:
-		print("AMD")
-		# pip install torch torchvision torchaudio --index https://download.pytorch.org/whl/rocm6.4
-		_ = CommandsManager.run_command(["uv", "add", "torch", "torchvision", "torchaudio", "--index", WINDOWS_TORCH_ROCM_INDEX_URL])
-	elif compute_device == 3:
-		print("INTEL")
-		# pip install torch torchvision torchaudio --index https://download.pytorch.org/whl/xpu
-		_ = CommandsManager.run_command(["uv", "add", "torch", "torchvision", "torchaudio", "--index", WINDOWS_TORCH_INTEL_INDEX_URL])
+	# compute_device: int = get_compute_device()
+	# if compute_device == 0:
+	# 	print("CPU")
+	# 	# pip install torch torchvision torchaudio
+	# 	_ = CommandsManager.run_command(["uv", "add", "torch", "torchvision", "torchaudio"])
+	# elif compute_device == 1:
+	# 	print("CUDA")
+	# 	# pip install torch torchvision torchaudio --index https://download.pytorch.org/whl/cu130
+	# 	_ = CommandsManager.run_command(["uv", "add", "torch", "torchvision", "torchaudio", "--index", WINDOWS_TORCH_CUDA_INDEX_URL])
+	# elif compute_device == 2:
+	# 	print("AMD")
+	# 	# pip install torch torchvision torchaudio --index https://download.pytorch.org/whl/rocm6.4
+	# 	_ = CommandsManager.run_command(["uv", "add", "torch", "torchvision", "torchaudio", "--index", WINDOWS_TORCH_ROCM_INDEX_URL])
+	# elif compute_device == 3:
+	# 	print("INTEL")
+	# 	# pip install torch torchvision torchaudio --index https://download.pytorch.org/whl/xpu
+	# 	_ = CommandsManager.run_command(["uv", "add", "torch", "torchvision", "torchaudio", "--index", WINDOWS_TORCH_INTEL_INDEX_URL])
+
+	# uv pip install torch --torch-backend=auto
+	_ = CommandsManager.run_command(["uv", "pip", "install", "torch", "torchvision", "torchaudio", "--torch-backend", "auto"])
 
 	os.chdir(INSTALLER_DIRECTORY)
 
