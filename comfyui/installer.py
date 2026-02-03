@@ -42,7 +42,7 @@ COMFYUI_MAIN_REPOSITORY_URL: str = "https://github.com/comfyanonymous/ComfyUI"
 COMMAND_LINE_ARGS_FOR_COMFYUI: List[str] = [
 	# custom command line arguments for comfyui - separate each string by comma
 	# e.g. ["--listen", "--api", "--highvram", "--somevalue", "5"]
-	"--enable-cors-header", "*", "--lowvram"
+	"--enable-cors-header", "*", "--lowvram", "--listen"
 ]
 
 COMFYUI_CUSTOM_NODES: List[str] = [
@@ -309,7 +309,7 @@ def install_comfyui_shared(folder: Path) -> None:
 	if not venv_folder.exists():
 		print(f"Setting up uv project in {comfyui_directory.as_posix()}")
 		os.chdir(comfyui_directory)
-		_ = CommandsManager.run_command(["uv", "venv"])
+		_ = CommandsManager.run_command(["uv", "venv", "--python",  "3.12", ".venv"])
 		# install basic requirements
 		_ = CommandsManager.run_command(["uv", "add", "pip", "--default-index", "https://pypi.org/simple"])
 		os.chdir(INSTALLER_DIRECTORY)
@@ -448,7 +448,7 @@ def main() -> None:
 	except ImportError:
 		if sys.argv[1] == "1":
 			print("requests and tqdm were not installed even after script restart!")
-			print(f"Try manually install it by opening a terminal in the {INSTALLER_DIRECTORY.as_posix()} directory and doing `uv init && uv venv && uv add requests tqdm`.")
+			print(f"Try manually install it by opening a terminal in the {INSTALLER_DIRECTORY.as_posix()} directory and doing `uv init && uv venv --python 3.12 .venv && uv add requests tqdm`.")
 			exit(1)
 		print("requests and tqdm were not successfully hot loaded in, attempting script restart")
 		status = CommandsManager.run_process("uv run --script installer.py 1")
